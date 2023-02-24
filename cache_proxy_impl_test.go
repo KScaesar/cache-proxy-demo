@@ -3,16 +3,20 @@ package example
 import (
 	"context"
 	"errors"
+	"math/rand"
+	"runtime"
+	"sync"
 	"testing"
 )
 
-func TestCacheProxyV1_ReadValue(t *testing.T) {
+func TestCacheProxyMutex_ReadValue(t *testing.T) {
 	// arrange
 	users := NewUsers(100)
+	ids := GetUserIdAll(users)
 	db := NewDatabase(users)
 	cache := NewMutexCache()
 
-	proxy := CacheProxyV1{
+	proxy := CacheProxyMutex{
 		Cache: cache,
 
 		TransformReadOption: func(readDtoOption any) (key string) {
@@ -35,7 +39,6 @@ func TestCacheProxyV1_ReadValue(t *testing.T) {
 	// assert cache
 	{
 		maxCnt := 10
-		ids := GetUserIdAll(users)
 		for i := 0; i < maxCnt; i++ {
 			_, err := proxy.ReadValue(nil, ids[i])
 			if err != nil {
@@ -110,13 +113,12 @@ func TestCacheProxyV1_ReadValue(t *testing.T) {
 	}
 }
 
-func BenchmarkCacheProxyV1_ReadValue(b *testing.B) {
-	// arrange
-	users := NewUsers(1e3)
+func BenchmarkCacheProxyMutex_ReadValue(b *testing.B) {
+	userCount := 100
+	users := NewUsers(userCount)
 	db := NewDatabase(users)
 	cache := NewMutexCache()
-
-	proxy := CacheProxyV1{
+	proxy := &CacheProxyMutex{
 		Cache: cache,
 
 		TransformReadOption: func(readDtoOption any) (key string) {
@@ -133,8 +135,44 @@ func BenchmarkCacheProxyV1_ReadValue(b *testing.B) {
 		CanIgnoreReadSourceErrorNotFound: true,
 		CacheTTL:                         0,
 	}
+	CacheProxy_Benchmark(b, proxy, db)
+}
 
+func CacheProxy_Benchmark(b *testing.B, proxy CacheProxy, db *Database) {
+	users := db.users
+	ids := GetUserIdAll(users)
+
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-
+		id := ids[rand.Intn(len(db.users))]
+		start, end := concurrencyWorker(func() {
+			proxy.ReadValue(nil, id)
+		})
+		close(start)
+		<-end
 	}
+
+	b.Logf("db qry count = %v, b.N=%v", db.qryCount, b.N)
+}
+
+func concurrencyWorker(action func()) (start chan struct{}, end chan struct{}) {
+	var wg sync.WaitGroup
+	start = make(chan struct{})
+	end = make(chan struct{})
+
+	// workerCount := 1
+	workerCount := 2 * runtime.GOMAXPROCS(0)
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			<-start
+			action()
+			wg.Done()
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(end)
+	}()
+	return start, end
 }

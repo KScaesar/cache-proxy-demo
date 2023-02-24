@@ -25,7 +25,7 @@ func (db *Database) QueryUserForShareMode(id string) (users *gofakeit.PersonInfo
 	defer db.mu.Unlock()
 
 	db.qryCount++
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(10 * time.Microsecond)
 	v, ok := db.users[id]
 	if !ok {
 		return nil, ErrNotFound

@@ -2,15 +2,13 @@ package example
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
-type CacheProxy interface {
-	ReadValue(ctx context.Context, readDtoOption any) (readModel any, err error)
-}
-
-type CacheProxyV1 struct {
+type CacheProxyMutex struct {
 	Cache Cache
+	mu    sync.Mutex
 
 	TransformReadOption func(readDtoOption any) (key string)
 	ReadSource          func(ctx context.Context, readDtoOption any) (readModel any, err error)
@@ -21,8 +19,10 @@ type CacheProxyV1 struct {
 	CacheTTL                         time.Duration
 }
 
-func (proxy *CacheProxyV1) ReadValue(ctx context.Context, readDtoOption any) (readModel any, err error) {
+func (proxy *CacheProxyMutex) ReadValue(ctx context.Context, readDtoOption any) (readModel any, err error) {
 	var empty any
+	// proxy.mu.Lock()
+	// defer proxy.mu.Unlock()
 
 	key := proxy.TransformReadOption(readDtoOption)
 	val, err := proxy.Cache.GetValue(ctx, key)
