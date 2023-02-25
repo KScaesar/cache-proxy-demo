@@ -177,6 +177,7 @@ type cacheResult struct {
 }
 
 type CommandGet struct {
+	ctx   context.Context
 	key   string
 	reply chan cacheResult
 }

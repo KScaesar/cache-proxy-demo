@@ -1,12 +1,16 @@
 package example
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/google/uuid"
 )
+
+type UserRepository interface {
+	QueryUserForShareMode(id string) (users *gofakeit.PersonInfo, err error)
+}
 
 func NewDatabase(users map[string]*gofakeit.PersonInfo) *Database {
 	return &Database{
@@ -35,8 +39,8 @@ func (db *Database) QueryUserForShareMode(id string) (users *gofakeit.PersonInfo
 
 func GetUserIdAll(users map[string]*gofakeit.PersonInfo) []string {
 	idList := make([]string, 0, len(users))
-	for key := range users {
-		idList = append(idList, key)
+	for i := 0; i < len(users); i++ {
+		idList = append(idList, fmt.Sprintf("id[%v]", i))
 	}
 	return idList
 }
@@ -46,7 +50,7 @@ func NewUsers(size int) map[string]*gofakeit.PersonInfo {
 	gofakeit.SetGlobalFaker(faker)
 	users := make(map[string]*gofakeit.PersonInfo, size)
 	for i := 0; i < size; i++ {
-		id := uuid.New().String()
+		id := fmt.Sprintf("id[%v]", i)
 		users[id] = gofakeit.Person()
 	}
 	return users
