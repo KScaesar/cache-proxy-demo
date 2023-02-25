@@ -19,10 +19,10 @@ func NewCacheProxyChannel(
 	proxy := &CacheProxyChannel{
 		Cache: cache,
 
-		startDelivery: make(chan CommandProxyGet),
-		doneDelivery:  make(chan string, 1),
-		firstDelivery: make(map[string]*Entry),
-		end:           make(chan struct{}),
+		startDelivery:  make(chan CommandProxyGet),
+		doneDelivery:   make(chan string, 1),
+		singleDelivery: make(map[string]*Entry),
+		end:            make(chan struct{}),
 
 		TransformReadOption: transformReadOption,
 		ReadDataSource:      readDataSource,
@@ -41,11 +41,11 @@ func NewCacheProxyChannel(
 type CacheProxyChannel struct {
 	Cache Cache
 
-	startDelivery chan CommandProxyGet
-	doneDelivery  chan string
-	firstDelivery map[string]*Entry
-	end           chan struct{}
-	once          sync.Once
+	startDelivery  chan CommandProxyGet
+	doneDelivery   chan string
+	singleDelivery map[string]*Entry
+	end            chan struct{}
+	once           sync.Once
 
 	TransformReadOption func(readDtoOption any) (key string)
 	ReadDataSource      func(ctx context.Context, readDtoOption any) (readModel any, err error)
@@ -93,8 +93,8 @@ func (proxy *CacheProxyChannel) manager() {
 				fmt.Println("done", key)
 			}
 
-			delete(proxy.firstDelivery, key)
-			// proxy.firstDelivery[key] = &Entry{ready: make(chan struct{})} // dead lock, because entry != nil, not enter main read
+			delete(proxy.singleDelivery, key)
+			// proxy.singleDelivery[key] = &Entry{ready: make(chan struct{})} // dead lock, because entry != nil, not enter main read
 
 		case cmd := <-proxy.startDelivery:
 			if proxy.debug {
@@ -102,10 +102,10 @@ func (proxy *CacheProxyChannel) manager() {
 			}
 
 			key := proxy.TransformReadOption(cmd.readDtoOption)
-			entry := proxy.firstDelivery[key]
+			entry := proxy.singleDelivery[key]
 			if entry == nil {
 				entry = &Entry{ready: make(chan struct{})}
-				proxy.firstDelivery[key] = entry
+				proxy.singleDelivery[key] = entry
 				go proxy.slowMainReader(cmd.ctx, cmd.readDtoOption, entry)
 				// break // dead lock, because main read have not reply
 			}
@@ -160,7 +160,13 @@ func (proxy *CacheProxyChannel) slowMainReader(ctx context.Context, readDtoOptio
 		close(entry.ready)
 
 		go func() {
-			time.Sleep(time.Second) // workaround bug: double main read
+			// workaround bug: double main read
+			//
+			// 原本以為是 bug
+			// 但看到下面的文章, 也可以想成, 用來控制 幾秒內 允許第二次 main read
+			// bug 變成 feature xd
+			// https://www.cyningsun.com/01-11-2021/golang-concurrency-singleflight.html
+			time.Sleep(time.Second)
 			proxy.doneDelivery <- key
 		}()
 	}()

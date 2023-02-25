@@ -9,8 +9,8 @@ import (
 type ReadDataSource func(ctx context.Context, readDtoOption any) (readModel any, err error)
 
 type CacheProxySyncMap struct {
-	Cache         Cache
-	firstDelivery sync.Map // key:ReadDataSource(func)
+	Cache          Cache
+	singleDelivery sync.Map // key:ReadDataSource(func)
 
 	TransformReadOption func(readDtoOption any) (key string)
 	ReadDataSource      func(ctx context.Context, readDtoOption any) (readModel any, err error)
@@ -37,7 +37,7 @@ func (proxy *CacheProxySyncMap) ReadValueV1(ctx context.Context, readDtoOption a
 	var empty any
 
 	key := proxy.TransformReadOption(readDtoOption)
-	readFn, exist := proxy.firstDelivery.Load(key)
+	readFn, exist := proxy.singleDelivery.Load(key)
 	if exist {
 		return readFn.(ReadDataSource)(ctx, readDtoOption)
 	}
@@ -49,7 +49,7 @@ func (proxy *CacheProxySyncMap) ReadValueV1(ctx context.Context, readDtoOption a
 		return readModel, err
 	})
 
-	mainReadFn, ok := proxy.firstDelivery.LoadOrStore(key, readFn)
+	mainReadFn, ok := proxy.singleDelivery.LoadOrStore(key, readFn)
 	if ok {
 		// 其他 thread 拿到的是, main read 的 閉包 func, 包含回傳值
 		return mainReadFn.(ReadDataSource)(ctx, readDtoOption)
@@ -58,7 +58,7 @@ func (proxy *CacheProxySyncMap) ReadValueV1(ctx context.Context, readDtoOption a
 	// main read
 	defer func() {
 		wg.Done()
-		proxy.firstDelivery.Delete(key)
+		proxy.singleDelivery.Delete(key)
 	}()
 
 	val, err := proxy.Cache.GetValue(ctx, key)
@@ -102,7 +102,7 @@ func (proxy *CacheProxySyncMap) ReadValueV2(ctx context.Context, readDtoOption a
 		return val, nil
 	}
 
-	readFn, exist := proxy.firstDelivery.Load(key)
+	readFn, exist := proxy.singleDelivery.Load(key)
 	if exist {
 		return readFn.(ReadDataSource)(ctx, readDtoOption)
 	}
@@ -114,21 +114,21 @@ func (proxy *CacheProxySyncMap) ReadValueV2(ctx context.Context, readDtoOption a
 		return readModel, err
 	})
 
-	mainReadFn, ok := proxy.firstDelivery.LoadOrStore(key, readFn)
+	mainReadFn, ok := proxy.singleDelivery.LoadOrStore(key, readFn)
 	if ok {
 		return mainReadFn.(ReadDataSource)(ctx, readDtoOption)
 	}
 
 	// main read
 	defer func() {
-		proxy.firstDelivery.Store(key, ReadDataSource(func(context.Context, any) (any, error) {
+		proxy.singleDelivery.Store(key, ReadDataSource(func(context.Context, any) (any, error) {
 			return readModel, nil
 		}))
 		wg.Done()
 
 		go func() {
 			time.Sleep(time.Second)
-			proxy.firstDelivery.Delete(key)
+			proxy.singleDelivery.Delete(key)
 		}()
 	}()
 
@@ -160,7 +160,7 @@ func (proxy *CacheProxySyncMap) ReadValueV3(ctx context.Context, readDtoOption a
 		return val, nil
 	}
 
-	readFn, exist := proxy.firstDelivery.Load(key)
+	readFn, exist := proxy.singleDelivery.Load(key)
 	if exist {
 		return readFn.(ReadDataSource)(ctx, readDtoOption)
 	}
@@ -172,7 +172,7 @@ func (proxy *CacheProxySyncMap) ReadValueV3(ctx context.Context, readDtoOption a
 		return readModel, err
 	})
 
-	mainReadFn, ok := proxy.firstDelivery.LoadOrStore(key, readFn)
+	mainReadFn, ok := proxy.singleDelivery.LoadOrStore(key, readFn)
 	if ok {
 		return mainReadFn.(ReadDataSource)(ctx, readDtoOption)
 	}
@@ -180,10 +180,12 @@ func (proxy *CacheProxySyncMap) ReadValueV3(ctx context.Context, readDtoOption a
 	// main read
 	defer func() {
 		wg.Done()
-		proxy.firstDelivery.Delete(key)
+		proxy.singleDelivery.Delete(key)
 	}()
 
-	// 和 v2 的差異: 再次到 cache 檢查, 確認 cache 是否資料
+	// 和 v2 的差異:
+	// 再次到 cache 檢查, 確認 cache 是否有資料
+	// 如此可確保 不會發生 重複進行 db read
 	val, err = proxy.Cache.GetValue(ctx, key)
 	if err != nil {
 		if !(proxy.IsAnNotFoundError(err) || proxy.CanIgnoreCacheError) {
