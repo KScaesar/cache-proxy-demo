@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const userCount = int(200)
+const userCount = int(2e3)
 
 func TestCacheProxyMutex_ReadValue(t *testing.T) {
 	// arrange
@@ -140,6 +140,7 @@ func BenchmarkCacheProxyMutex_ReadValue(b *testing.B) {
 
 	CacheProxy_Benchmark(b, proxy, db)
 }
+
 func BenchmarkCacheProxyChannel_ReadValue(b *testing.B) {
 	users := NewUsers(userCount)
 	db := NewDatabase(users)
@@ -164,6 +165,33 @@ func BenchmarkCacheProxyChannel_ReadValue(b *testing.B) {
 
 	CacheProxy_Benchmark(b, proxy, db)
 }
+
+func BenchmarkCacheProxySyncMap_ReadValue(b *testing.B) {
+	users := NewUsers(userCount)
+	db := NewDatabase(users)
+	cache := NewMutexCache()
+
+	proxy := &CacheProxySyncMap{
+		Cache: cache,
+
+		TransformReadOption: func(readDtoOption any) (key string) {
+			return readDtoOption.(string)
+		},
+		ReadDataSource: func(ctx context.Context, readDtoOption any) (readModel any, err error) {
+			id := readDtoOption.(string)
+			return db.QueryUserForShareMode(id)
+		},
+		IsAnNotFoundError: func(err error) bool {
+			return errors.Is(err, ErrNotFound)
+		},
+		CanIgnoreCacheError:              false,
+		CanIgnoreReadSourceErrorNotFound: true,
+		CacheTTL:                         0,
+	}
+
+	CacheProxy_Benchmark(b, proxy, db)
+}
+
 func CacheProxy_Benchmark(b *testing.B, proxy CacheProxy, db *Database) {
 	users := db.users
 	ids := GetUserIdAll(users)

@@ -106,16 +106,16 @@ func (proxy *CacheProxyChannel) manager() {
 			if entry == nil {
 				entry = &Entry{ready: make(chan struct{})}
 				proxy.firstDelivery[key] = entry
-				go proxy.slowMainRead(cmd.ctx, cmd.readDtoOption, entry)
+				go proxy.slowMainReader(cmd.ctx, cmd.readDtoOption, entry)
 				// break // dead lock, because main read have not reply
 			}
-			go proxy.reply(entry, cmd)
+			go proxy.replier(entry, cmd)
 		default:
 		}
 	}
 }
 
-func (proxy *CacheProxyChannel) reply(entry *Entry, cmd CommandProxyGet) {
+func (proxy *CacheProxyChannel) replier(entry *Entry, cmd CommandProxyGet) {
 	func(cmd CommandProxyGet) {
 		<-entry.ready
 		if proxy.debug {
@@ -128,7 +128,7 @@ func (proxy *CacheProxyChannel) reply(entry *Entry, cmd CommandProxyGet) {
 // bug: double main read
 //
 // cmd id[7]
-// main read id[7]
+// main read id[7] <-
 // cmd id[7]
 // cmd id[7]
 // cmd id[7]
@@ -140,7 +140,7 @@ func (proxy *CacheProxyChannel) reply(entry *Entry, cmd CommandProxyGet) {
 // cmd id[7]
 // ready id[7]
 // ready id[7]
-// main read id[7]
+// main read id[7] <-
 // ready id[7]
 // ready id[7]
 // ready id[7]
@@ -148,7 +148,7 @@ func (proxy *CacheProxyChannel) reply(entry *Entry, cmd CommandProxyGet) {
 // ready id[7]
 // done id[7]
 
-func (proxy *CacheProxyChannel) slowMainRead(ctx context.Context, readDtoOption any, entry *Entry) {
+func (proxy *CacheProxyChannel) slowMainReader(ctx context.Context, readDtoOption any, entry *Entry) {
 	if proxy.debug {
 		fmt.Println("main read", readDtoOption)
 	}
@@ -157,12 +157,12 @@ func (proxy *CacheProxyChannel) slowMainRead(ctx context.Context, readDtoOption 
 	var err error
 
 	defer func() {
+		close(entry.ready)
+
 		go func() {
 			time.Sleep(time.Second) // workaround bug: double main read
 			proxy.doneDelivery <- key
 		}()
-
-		close(entry.ready)
 	}()
 
 	readModel, err := proxy.ReadDataSource(ctx, readDtoOption)

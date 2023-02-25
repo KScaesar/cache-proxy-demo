@@ -17,7 +17,7 @@ func Benchmark_ParallelCache_WriteRation(b *testing.B) {
 	// 	ParallelCache_WriteRation(b, "ChanCache", NewChanCache, writeRatio)
 	// }
 
-	writeRatio := 5
+	writeRatio := 5 // 5%
 	ParallelCache_WriteRation(b, "MutexCache", NewMutexCache, writeRatio)
 	ParallelCache_WriteRation(b, "RwMutexCache", NewRwMutexCache, writeRatio)
 	ParallelCache_WriteRation(b, "SyncMapCache", NewSyncMapCache, writeRatio)
