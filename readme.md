@@ -6,7 +6,7 @@
 
 ## slide
 
-<https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w/edit#slide=id.g21186b42eed_1_0>
+<https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w>
 
 ## reference
 
