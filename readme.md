@@ -10,13 +10,15 @@
 
 ## reference
 
-- [Go语言圣经中文版 - 9.7. 示例: 并发的非阻塞缓存](https://github.com/gopl-zh/gopl-zh.github.com/blob/master/ch9/ch9-07.md?fbclid=IwAR0sVeVwXrDVxT0Ozh0vcSTxVJV-scl_ZA-vCDFkJE9HqiyRBDkSrnOpWc8)
-- [Messaging Patterns - Return Address](https://www.enterpriseintegrationpatterns.com/patterns/messaging/ReturnAddress.html)
-- [Messaging Patterns Overview](https://www.enterpriseintegrationpatterns.com/patterns/messaging/)
-- [sync.Map的LoadOrStore用途](https://xnum.github.io/2018/11/syncmap-loadorstore/)
-- [golang-pkg - Singleflight and its usage in 17 Media](https://github.com/golangtw/GolangTaiwanGathering/blob/master/meetup/gtg51/slides/singleflight-for-meetup.pdf)
-- [sync.singleflight 到底怎么用才对？](https://www.cyningsun.com/01-11-2021/golang-concurrency-singleflight.html)
-- [clean-arch (Tung 東東)](https://docs.google.com/presentation/d/1ouNiohGRcl5m_uGNrwlHuZ_hAXH13joLGTtkkxyJ8eY/edit#slide=id.g1c2a9713f29_0_1)
+1. [Go语言圣经中文版 - 9.7. 示例: 并发的非阻塞缓存](https://github.com/gopl-zh/gopl-zh.github.com/blob/master/ch9/ch9-07.md?fbclid=IwAR0sVeVwXrDVxT0Ozh0vcSTxVJV-scl_ZA-vCDFkJE9HqiyRBDkSrnOpWc8)
+2. [Messaging Patterns - Return Address](https://www.enterpriseintegrationpatterns.com/patterns/messaging/ReturnAddress.html)
+3. [Messaging Patterns Overview](https://www.enterpriseintegrationpatterns.com/patterns/messaging/)
+4. [sync.Map的LoadOrStore用途](https://xnum.github.io/2018/11/syncmap-loadorstore/)
+5. [golang-pkg - Singleflight and its usage in 17 Media](https://github.com/golangtw/GolangTaiwanGathering/blob/master/meetup/gtg51/slides/singleflight-for-meetup.pdf)
+6. [sync.singleflight 到底怎么用才对？](https://www.cyningsun.com/01-11-2021/golang-concurrency-singleflight.html)
+7. [clean-arch (Tung 東東)](https://docs.google.com/presentation/d/1ouNiohGRcl5m_uGNrwlHuZ_hAXH13joLGTtkkxyJ8eY/edit#slide=id.g1c2a9713f29_0_1)
+8. [Hardware Memory Models](https://research.swtch.com/hwmm)
+9. [How Does Golang Channel Works](https://levelup.gitconnected.com/how-does-golang-channel-works-6d66acd54753)
 
 ## benchmark
 

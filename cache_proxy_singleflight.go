@@ -9,7 +9,7 @@ import (
 
 type CacheProxySingleflight struct {
 	Cache          Cache
-	singleDelivery singleflight.Group // key:ReadDataSource(func)
+	singleDelivery singleflight.Group
 
 	TransformReadOption func(readDtoOption any) (key string)
 	ReadDataSource      func(ctx context.Context, readDtoOption any) (readModel any, err error)
