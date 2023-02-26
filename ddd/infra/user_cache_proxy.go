@@ -17,7 +17,7 @@ func (proxy *UserCacheProxy) QueryUserList(ctx context.Context, dto *domain.DtoQ
 		Cache: proxy.cache,
 
 		TransformReadOption: func(readDtoOption any) (key string) {
-			return readDtoOption.(*domain.DtoQryUserOption).Name
+			return readDtoOption.(*domain.DtoQryUserOption).String()
 		},
 		ReadDataSource: func(ctx context.Context, readDtoOption any) (readModel any, err error) {
 			return proxy.db.QueryUserList(ctx, readDtoOption.(*domain.DtoQryUserOption))
@@ -35,7 +35,6 @@ func (proxy *UserCacheProxy) QueryUserList(ctx context.Context, dto *domain.DtoQ
 	}
 	return readModel.(domain.DtoUserListResponse), nil
 }
-
 func (proxy *UserCacheProxy) QueryUserByAccount(ctx context.Context, account string) (domain.DtoUserResponse, error) {
 	queryUserByAccount := &CacheProxyImpl{
 		Cache: proxy.cache,
