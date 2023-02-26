@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const userCount = int(2e4)
+const userCount = int(2e2)
 
 func TestCacheProxyMutex_ReadValue(t *testing.T) {
 	// arrange

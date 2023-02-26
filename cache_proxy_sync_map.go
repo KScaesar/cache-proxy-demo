@@ -116,13 +116,14 @@ func (proxy *CacheProxySyncMap) ReadValueV2(ctx context.Context, readDtoOption a
 
 	mainReadFn, ok := proxy.singleDelivery.LoadOrStore(key, readFn)
 	if ok {
+		// 其他 thread 拿到的是, main read 的 閉包 func, 包含回傳值
 		return mainReadFn.(ReadDataSource)(ctx, readDtoOption)
 	}
 
 	// main read
 	defer func() {
 		proxy.singleDelivery.Store(key, ReadDataSource(func(context.Context, any) (any, error) {
-			return readModel, nil
+			return readModel, err
 		}))
 		wg.Done()
 

@@ -58,6 +58,10 @@ type CacheProxyChannel struct {
 }
 
 func (proxy *CacheProxyChannel) ReadValue(ctx context.Context, readDtoOption any) (readModel any, err error) {
+	return proxy.ReadValueV2(ctx, readDtoOption)
+}
+
+func (proxy *CacheProxyChannel) ReadValueV2(ctx context.Context, readDtoOption any) (readModel any, err error) {
 	key := proxy.TransformReadOption(readDtoOption)
 	readModel, err = proxy.Cache.GetValue(ctx, key)
 	if err == nil {
@@ -115,14 +119,15 @@ func (proxy *CacheProxyChannel) manager() {
 	}
 }
 
-func (proxy *CacheProxyChannel) replier(entry *Entry, cmd CommandProxyGet) {
-	func(cmd CommandProxyGet) {
-		<-entry.ready
-		if proxy.debug {
-			fmt.Println("ready", cmd.readDtoOption)
-		}
-		cmd.reply <- entry.result
-	}(cmd)
+func (proxy *CacheProxyChannel) replier(
+	entry *Entry,
+	cmd CommandProxyGet,
+) {
+	<-entry.ready
+	if proxy.debug {
+		fmt.Println("ready", cmd.readDtoOption)
+	}
+	cmd.reply <- entry.result
 }
 
 // bug: double main read
@@ -194,19 +199,20 @@ func (proxy *CacheProxyChannel) Close() {
 	})
 }
 
-// Entry 達到類似廣播資訊的功能, 為了讓相同的請求, 共用同樣的結果
+// Entry 達到類似廣播資訊的功能,
+// 為了讓相同的請求, 共用同樣的結果
 type Entry struct {
 	ready  chan struct{}
 	result ProxyResult
+}
+
+type ProxyResult struct {
+	val any
+	err error
 }
 
 type CommandProxyGet struct {
 	ctx           context.Context
 	readDtoOption any
 	reply         chan ProxyResult
-}
-
-type ProxyResult struct {
-	val any
-	err error
 }

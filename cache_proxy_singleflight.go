@@ -24,6 +24,33 @@ func (proxy *CacheProxySingleflight) ReadValue(ctx context.Context, readDtoOptio
 	return proxy.ReadValueV3(ctx, readDtoOption)
 }
 
+func (proxy *CacheProxySingleflight) withoutLockReadValue(ctx context.Context, readDtoOption any) (readModel any, Err error) {
+	var empty any
+
+	key := proxy.TransformReadOption(readDtoOption)
+	val, err := proxy.Cache.GetValue(ctx, key)
+	if err != nil {
+		if !(proxy.IsAnNotFoundError(err) || proxy.CanIgnoreCacheError) {
+			return empty, err
+		}
+
+		readModel, err = proxy.ReadDataSource(ctx, readDtoOption)
+		if err != nil {
+			if !(proxy.IsAnNotFoundError(err) && proxy.CanIgnoreReadSourceErrorNotFound) {
+				return empty, err
+			}
+		}
+
+		err = proxy.Cache.PutValue(ctx, key, readModel, proxy.CacheTTL)
+		if err != nil && !proxy.CanIgnoreCacheError {
+			return empty, err
+		}
+
+		return readModel, nil
+	}
+	return val, nil
+}
+
 // v1: userCount = int(2e4)
 // BenchmarkCacheProxySingleflight_ReadValue
 //    cache_proxy_impl_test.go:236: db qry count = 1, b.N=1
@@ -32,35 +59,12 @@ func (proxy *CacheProxySingleflight) ReadValue(ctx context.Context, readDtoOptio
 //    cache_proxy_impl_test.go:236: db qry count = 4305, b.N=4305
 // BenchmarkCacheProxySingleflight_ReadValue-8   	    4305	    277905 ns/op
 
-func (proxy *CacheProxySingleflight) ReadValueV1(ctx context.Context, readDtoOption any) (readModel any, Err error) {
-	var empty any
+func (proxy *CacheProxySingleflight) ReadValueV1(ctx context.Context, readDtoOption any) (readModel any, err error) {
 	key := proxy.TransformReadOption(readDtoOption)
-
-	readModel, Err, _ = proxy.singleDelivery.Do(key, func() (interface{}, error) {
-		val, err := proxy.Cache.GetValue(ctx, key)
-		if err != nil {
-			if !(proxy.IsAnNotFoundError(err) || proxy.CanIgnoreCacheError) {
-				return empty, err
-			}
-
-			readModel, err = proxy.ReadDataSource(ctx, readDtoOption)
-			if err != nil {
-				if !(proxy.IsAnNotFoundError(err) && proxy.CanIgnoreReadSourceErrorNotFound) {
-					return empty, err
-				}
-			}
-
-			err = proxy.Cache.PutValue(ctx, key, readModel, proxy.CacheTTL)
-			if err != nil && !proxy.CanIgnoreCacheError {
-				return empty, err
-			}
-
-			return readModel, nil
-		}
-		return val, nil
+	readModel, err, _ = proxy.singleDelivery.Do(key, func() (interface{}, error) {
+		return proxy.withoutLockReadValue(ctx, readDtoOption)
 	})
-
-	return readModel, Err
+	return readModel, err
 }
 
 // v2: userCount = int(2e4)
@@ -107,10 +111,7 @@ func (proxy *CacheProxySingleflight) ReadValueV2(ctx context.Context, readDtoOpt
 		return val, nil
 	}
 
-	// fmt.Println("cache", key)
 	ReadModel, Err, _ = proxy.singleDelivery.Do(key, func() (interface{}, error) {
-		// fmt.Println("main", readDtoOption)
-
 		// 無法解決 bug: double main read
 		// 套件自動刪除 main read record
 		// 無法靠外力控制
