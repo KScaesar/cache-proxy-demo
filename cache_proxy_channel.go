@@ -164,16 +164,18 @@ func (proxy *CacheProxyChannel) slowMainReader(ctx context.Context, readDtoOptio
 	defer func() {
 		close(entry.ready)
 
-		go func() {
-			// workaround bug: double main read
-			//
-			// 原本以為是 bug
-			// 但看到下面的文章, 也可以想成, 用來控制 幾秒內 允許第二次 main read
-			// bug 變成 feature xd
-			// https://www.cyningsun.com/01-11-2021/golang-concurrency-singleflight.html
-			time.Sleep(time.Second)
-			proxy.doneDelivery <- key
-		}()
+		// 要注意順序
+		// close(chan) 一定要先執行, 通知所有 replier
+		// 再 send done
+
+		// workaround bug: double main read
+		//
+		// 原本以為是 bug
+		// 但看到下面的文章, 也可以想成, 用來控制 幾秒內 允許第二次 main read
+		// bug 變成 feature xd
+		// https://www.cyningsun.com/01-11-2021/golang-concurrency-singleflight.html
+		time.Sleep(time.Second)
+		proxy.doneDelivery <- key
 	}()
 
 	readModel, err := proxy.ReadDataSource(ctx, readDtoOption)

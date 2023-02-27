@@ -1,4 +1,4 @@
-# 傳遞 message 來撰寫程式, 在 golang 是怎樣的體驗
+# 傳遞 message 來撰寫程式, 在 golang 應該如何思考
 
 實現一個 簡易的 cache proxy  
 藉由  concurrency 的情景, 提供數種程式的撰寫方式  
@@ -7,6 +7,15 @@
 ## slide
 
 <https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w>
+
+## cache proxy implimentation
+
+- [global lock proxy](./cache_proxy_mutex.go)
+- [channel proxy](./cache_proxy_channel.go)
+- [shard lock proxy](./cache_proxy_sync_map.go)
+- [singleflight proxy](./cache_proxy_singleflight.go)
+
+![channel impl data flow](./asset/channel%202.gif)
 
 ## reference
 
@@ -19,6 +28,7 @@
 7. [clean-arch (Tung 東東)](https://docs.google.com/presentation/d/1ouNiohGRcl5m_uGNrwlHuZ_hAXH13joLGTtkkxyJ8eY/edit#slide=id.g1c2a9713f29_0_1)
 8. [Hardware Memory Models](https://research.swtch.com/hwmm)
 9. [How Does Golang Channel Works](https://levelup.gitconnected.com/how-does-golang-channel-works-6d66acd54753)
+10. [Mutex Or Channel](https://github.com/golang/go/wiki/MutexOrChannel)
 
 ## benchmark
 
