@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const userCount = int(2e3)
+const userCount = int(5e4)
 
 func TestCacheProxyMutex_ReadValue(t *testing.T) {
 	// arrange
@@ -138,7 +138,7 @@ func BenchmarkCacheProxyMutex_ReadValue(b *testing.B) {
 		CacheTTL:                         0,
 	}
 
-	CacheProxyBenchmark(b, proxy, db)
+	CacheProxyBenchmarkV2(b, proxy, db)
 }
 
 func BenchmarkCacheProxyChannel_ReadValue(b *testing.B) {
@@ -163,7 +163,7 @@ func BenchmarkCacheProxyChannel_ReadValue(b *testing.B) {
 		time.Hour,
 	)
 
-	CacheProxyBenchmark(b, proxy, db)
+	CacheProxyBenchmarkV2(b, proxy, db)
 }
 
 func BenchmarkCacheProxySyncMap_ReadValue(b *testing.B) {
@@ -189,7 +189,7 @@ func BenchmarkCacheProxySyncMap_ReadValue(b *testing.B) {
 		CacheTTL:                         0,
 	}
 
-	CacheProxyBenchmark(b, proxy, db)
+	CacheProxyBenchmarkV2(b, proxy, db)
 }
 
 func BenchmarkCacheProxySingleflight_ReadValue(b *testing.B) {
@@ -215,10 +215,10 @@ func BenchmarkCacheProxySingleflight_ReadValue(b *testing.B) {
 		CacheTTL:                         0,
 	}
 
-	CacheProxyBenchmark(b, proxy, db)
+	CacheProxyBenchmarkV2(b, proxy, db)
 }
 
-func CacheProxyBenchmark(b *testing.B, proxy CacheProxy, db *Database) {
+func CacheProxyBenchmarkV1(b *testing.B, proxy CacheProxy, db *Database) {
 	users := db.users
 	ids := GetUserIdAll(users)
 
@@ -232,6 +232,31 @@ func CacheProxyBenchmark(b *testing.B, proxy CacheProxy, db *Database) {
 		start()
 		wait()
 	}
+
+	b.Logf("db qry count = %v, b.N=%v", db.qryCount, b.N)
+}
+
+func CacheProxyBenchmarkV2(b *testing.B, proxy CacheProxy, db *Database) {
+	users := db.users
+	ids := GetUserIdAll(users)
+
+	b.ResetTimer()
+	var wg sync.WaitGroup
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		id := ids[i%userCount]
+		// id := ids[rand.Intn(userCount)]
+		go func() {
+			start, wait := ConcurrentTester(1, func() {
+				proxy.ReadValue(nil, id)
+			})
+			start()
+			wait()
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
 
 	b.Logf("db qry count = %v, b.N=%v", db.qryCount, b.N)
 }
