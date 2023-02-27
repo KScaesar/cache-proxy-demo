@@ -59,7 +59,11 @@ func (proxy *CacheProxySingleflight) withoutLockReadValue(ctx context.Context, r
 //    cache_proxy_impl_test.go:236: db qry count = 4305, b.N=4305
 // BenchmarkCacheProxySingleflight_ReadValue-8   	    4305	    277905 ns/op
 
-func (proxy *CacheProxySingleflight) ReadValueV1(ctx context.Context, readDtoOption any) (readModel any, err error) {
+func (proxy *CacheProxySingleflight) ReadValueV1(
+	ctx context.Context,
+	readDtoOption any,
+) (readModel any, err error) {
+
 	key := proxy.TransformReadOption(readDtoOption)
 	readModel, err, _ = proxy.singleDelivery.Do(key, func() (interface{}, error) {
 		return proxy.withoutLockReadValue(ctx, readDtoOption)
@@ -143,7 +147,6 @@ func (proxy *CacheProxySingleflight) ReadValueV2(ctx context.Context, readDtoOpt
 // BenchmarkCacheProxySingleflight_ReadValue-8   	    4419	    269547 ns/op
 
 func (proxy *CacheProxySingleflight) ReadValueV3(ctx context.Context, readDtoOption any) (readModel any, Err error) {
-	var empty any
 	key := proxy.TransformReadOption(readDtoOption)
 
 	val, err := proxy.Cache.GetValue(ctx, key)
@@ -151,31 +154,8 @@ func (proxy *CacheProxySingleflight) ReadValueV3(ctx context.Context, readDtoOpt
 		return val, nil
 	}
 
-	readModel, Err, _ = proxy.singleDelivery.Do(key, func() (interface{}, error) {
-		// main read 再次判斷 cache 是否存在
-		// 確保 不會發生 重複進行 db read
-		val, err := proxy.Cache.GetValue(ctx, key)
-		if err != nil {
-			if !(proxy.IsAnNotFoundError(err) || proxy.CanIgnoreCacheError) {
-				return empty, err
-			}
-
-			readModel, err = proxy.ReadDataSource(ctx, readDtoOption)
-			if err != nil {
-				if !(proxy.IsAnNotFoundError(err) && proxy.CanIgnoreReadSourceErrorNotFound) {
-					return empty, err
-				}
-			}
-
-			err = proxy.Cache.PutValue(ctx, key, readModel, proxy.CacheTTL)
-			if err != nil && !proxy.CanIgnoreCacheError {
-				return empty, err
-			}
-
-			return readModel, nil
-		}
-		return val, nil
+	readModel, err, _ = proxy.singleDelivery.Do(key, func() (interface{}, error) {
+		return proxy.withoutLockReadValue(ctx, readDtoOption)
 	})
-
-	return readModel, Err
+	return readModel, err
 }

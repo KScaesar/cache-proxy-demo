@@ -22,7 +22,7 @@ type CacheProxySyncMap struct {
 }
 
 func (proxy *CacheProxySyncMap) ReadValue(ctx context.Context, readDtoOption any) (readModel any, err error) {
-	return proxy.ReadValueV3(ctx, readDtoOption)
+	return proxy.ReadValueV2(ctx, readDtoOption)
 }
 
 // v1: userCount = int(2e4)
