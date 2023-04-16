@@ -2,18 +2,24 @@
 
 實現一個 簡易的 cache proxy  
 藉由  concurrency 的情景, 提供數種程式的撰寫方式  
-並探討單一職責  
 
 ## slide
 
-<https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w>
+v2: 2023-04-25 go meetup 所使用的 side  
+<>
+
+v0: 內容分散, 關注太多細節, 程式碼凌亂  
+<https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w>  
+
+v0 相關程式  
+<https://github.com/KScaesar/cache-proxy-demo/tree/v0.1.0>
 
 ## cache proxy implimentation
 
-- [global lock proxy](./cache_proxy_mutex.go)
-- [channel proxy](./cache_proxy_channel.go)
-- [shard lock proxy](./cache_proxy_sync_map.go)
-- [singleflight proxy](./cache_proxy_singleflight.go)
+- [global lock proxy](./mutex_proxy.go)
+- [channel proxy](./channel_proxy.go)
+- [shard lock proxy](./syncMap_proxy.go)
+- [singleflight proxy](./singleflight_proxy.go)
 
 ![channel impl data flow](./asset/channel%202.gif)
 

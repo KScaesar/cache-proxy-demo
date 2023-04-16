@@ -1,4 +1,4 @@
-module github.com/KScaesar/cache-proxy-demo
+module github.com/KScaesar/cache-proxy-demo/v2
 
 go 1.20
 
