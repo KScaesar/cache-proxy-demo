@@ -51,7 +51,7 @@ func CacheProxyBenchmarkConcurrentOneKey(b *testing.B, proxy CacheProxy, db *Use
 		wait()
 	}
 
-	b.Logf("one key: db qry count = %v, b.N=%v", db.qryCount, b.N)
+	// b.Logf("one key: db qry count = %v, b.N=%v", db.qryCount, b.N)
 }
 
 func CacheProxyBenchmarkConcurrentMultiKey(b *testing.B, proxy CacheProxy, db *UserDatabase) {
@@ -73,13 +73,13 @@ func CacheProxyBenchmarkConcurrentMultiKey(b *testing.B, proxy CacheProxy, db *U
 	}
 	wg.Wait()
 
-	b.Logf("multi key: db qry count = %v, b.N=%v", db.qryCount, b.N)
+	// b.Logf("multi key: db qry count = %v, b.N=%v", db.qryCount, b.N)
 }
 
 func dependency() (string, *BaseCacheProxy, *UserDatabase) {
 	// concurrentKeys := "one"
 	concurrentKeys := "multi"
-	dataSize := 2e4
+	dataSize := 2e5
 
 	db := NewUserDatabase(int(dataSize))
 	baseProxy := &BaseCacheProxy{
