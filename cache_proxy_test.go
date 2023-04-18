@@ -38,7 +38,7 @@ func ConcurrentTester(goroutinePower uint8, fn func()) (start func(), wait func(
 	return start, wait
 }
 
-func CacheProxyBenchmarkConcurrentOneKey(b *testing.B, proxy CacheProxy, db *UserDatabase) {
+func CacheProxyBenchmarkConcurrentSingleKey(b *testing.B, proxy CacheProxy, db *UserDatabase) {
 	ids := db.GetUserIds()
 	b.ResetTimer()
 
@@ -51,7 +51,7 @@ func CacheProxyBenchmarkConcurrentOneKey(b *testing.B, proxy CacheProxy, db *Use
 		wait()
 	}
 
-	// b.Logf("one key: db qry count = %v, b.N=%v", db.qryCount, b.N)
+	// b.Logf("single key: db qry count = %v, b.N=%v", db.qryCount, b.N)
 }
 
 func CacheProxyBenchmarkConcurrentMultiKey(b *testing.B, proxy CacheProxy, db *UserDatabase) {
@@ -77,9 +77,9 @@ func CacheProxyBenchmarkConcurrentMultiKey(b *testing.B, proxy CacheProxy, db *U
 }
 
 func dependency() (string, *BaseCacheProxy, *UserDatabase) {
-	// concurrentKeys := "one"
-	concurrentKeys := "multi"
-	dataSize := 2e5
+	concurrentKeys := "single"
+	// concurrentKeys := "multi"
+	dataSize := 2e3
 
 	db := NewUserDatabase(int(dataSize))
 	baseProxy := &BaseCacheProxy{
@@ -101,8 +101,8 @@ func dependency() (string, *BaseCacheProxy, *UserDatabase) {
 func BenchmarkMutexProxy(b *testing.B) {
 	concurrentKeys, baseProxy, db := dependency()
 	switch concurrentKeys {
-	case "one":
-		CacheProxyBenchmarkConcurrentOneKey(b, UseMutex(baseProxy), db)
+	case "single":
+		CacheProxyBenchmarkConcurrentSingleKey(b, UseMutex(baseProxy), db)
 	case "multi":
 		CacheProxyBenchmarkConcurrentMultiKey(b, UseMutex(baseProxy), db)
 	}
@@ -111,8 +111,8 @@ func BenchmarkMutexProxy(b *testing.B) {
 func BenchmarkChannelProxy(b *testing.B) {
 	concurrentKeys, baseProxy, db := dependency()
 	switch concurrentKeys {
-	case "one":
-		CacheProxyBenchmarkConcurrentOneKey(b, UseChannel(baseProxy), db)
+	case "single":
+		CacheProxyBenchmarkConcurrentSingleKey(b, UseChannel(baseProxy), db)
 	case "multi":
 		CacheProxyBenchmarkConcurrentMultiKey(b, UseChannel(baseProxy), db)
 	}
@@ -121,8 +121,8 @@ func BenchmarkChannelProxy(b *testing.B) {
 func BenchmarkSyncMapProxy(b *testing.B) {
 	concurrentKeys, baseProxy, db := dependency()
 	switch concurrentKeys {
-	case "one":
-		CacheProxyBenchmarkConcurrentOneKey(b, UseSyncMap(baseProxy), db)
+	case "single":
+		CacheProxyBenchmarkConcurrentSingleKey(b, UseSyncMap(baseProxy), db)
 	case "multi":
 		CacheProxyBenchmarkConcurrentMultiKey(b, UseSyncMap(baseProxy), db)
 	}
@@ -131,8 +131,8 @@ func BenchmarkSyncMapProxy(b *testing.B) {
 func BenchmarkSingleflightProxy(b *testing.B) {
 	concurrentKeys, baseProxy, db := dependency()
 	switch concurrentKeys {
-	case "one":
-		CacheProxyBenchmarkConcurrentOneKey(b, UseSingleflight(baseProxy), db)
+	case "single":
+		CacheProxyBenchmarkConcurrentSingleKey(b, UseSingleflight(baseProxy), db)
 	case "multi":
 		CacheProxyBenchmarkConcurrentMultiKey(b, UseSingleflight(baseProxy), db)
 	}

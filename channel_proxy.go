@@ -80,6 +80,8 @@ func (proxy *ChannelProxy) manager() {
 
 		case <-proxy.closeManager:
 			return
+
+		// default: // 高併發密集請求時, default 移除註解, 可以讓效能更好
 		}
 	}
 }

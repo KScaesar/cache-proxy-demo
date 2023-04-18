@@ -1,7 +1,7 @@
 # 傳遞 message 來撰寫程式, 在 golang 應該如何思考
 
 實現一個 簡易的 cache proxy  
-藉由  concurrency 的情景, 提供數種程式的撰寫方式  
+藉由 concurrency 的情景, 提供數種程式的撰寫方式
 
 ![go meetup profile](./asset/go%20meetup%20profile.jpg)
 
@@ -13,7 +13,7 @@ v2:
 
 v0:  
 內容分散, 關注太多細節, 程式碼凌亂  
-~~<https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w>~~  
+~~<https://docs.google.com/presentation/d/1yctNKOoct49OEj7jZtKfVjrnZifABWbWxfpJ3MM2D9w>~~
 
 v0 相關程式  
 <https://github.com/KScaesar/cache-proxy-demo/tree/v0.1.0>
@@ -33,48 +33,48 @@ v0 相關程式
 
 goos: linux  
 goarch: amd64  
-cpu: Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz  
+cpu: Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz
 
 ---
 
-OneKey:  
+SingleKey:  
 data size = X, 共有 X 個 key  
 循序查詢不同 key  
-同一個 key, 同時有 N 個請求  
+同一個 key, 同時有 N 個請求
 
 MultiKey:  
 data size = X, 共有 X 個 key  
 併發 b.N 個請求, 查詢不同 key  
 同一個 key, 同時有 N 個請求
 
-| OneKey Performance                                  | MultiKey Performance                                   |
-|-----------------------------------------------------|--------------------------------------------------------|
-| ![ one key diagram](./asset/OneKey_Performance.png) | ![multi key diagram](./asset/MultiKey_Performance.png) |
+| Performance for SingleKey Scenario                        | Performance for MultiKey Scenario                      |
+|-----------------------------------------------------------|--------------------------------------------------------|
+| ![ single key diagram](./asset/SingleKey_Performance.png) | ![multi key diagram](./asset/MultiKey_Performance.png) |
 
 - 隨著數據量的增加，性能都會變得更差，但 Mutex 的性能下降比較明顯
-- 不管是在 OneKey 還是 MultiKey 的情況下，使用 SyncMap 的效率都有不錯的表現
-- Channel 在 OneKey 的情況下性能較差，但在 MultiKey 的情況下性能有顯著提升
+- 不管是在 SingleKey 還是 MultiKey 的情況下，使用 SyncMap 的效率都有不錯的表現
+- Channel 在 SingleKey 的情況下性能較差，但在 MultiKey 的情況下性能有顯著提升
 - 在 MultiKey 隨著資料量增加，Channel 的效能優勢逐漸明顯，在大量資料使用 Channel 進行併發處理，可能是一個較好的選擇
-
 
 ---
 
 
-OneKey
+SingleKey
+
 ```
-# one key: data size: 2e3
+# single key: data size: 2e3
 BenchmarkMutexProxy-8         96925       12625 ns/op
 BenchmarkChannelProxy-8       27174       41798 ns/op
 BenchmarkSyncMapProxy-8       73860       15768 ns/op
 BenchmarkSingleflightProxy-8  63872       17039 ns/op
 
-# one key: data size: 2e4
+# single key: data size: 2e4
 BenchmarkMutexProxy-8         5845      207748 ns/op
 BenchmarkChannelProxy-8       4678      251148 ns/op
 BenchmarkSyncMapProxy-8      17397       66449 ns/op
 BenchmarkSingleflightProxy-8  4838      242412 ns/op
 
-# one key: data size: 2e5
+# single key: data size: 2e5
 BenchmarkMutexProxy-8         5563      205604 ns/op
 BenchmarkChannelProxy-8       4706      251540 ns/op
 BenchmarkSyncMapProxy-8      16418       68377 ns/op
@@ -84,6 +84,7 @@ BenchmarkSingleflightProxy-8  4524      254424 ns/op
 ---
 
 MultiKey
+
 ```
 # multi key: data size: 2e2
 BenchmarkMutexProxy-8         122713        9026 ns/op
