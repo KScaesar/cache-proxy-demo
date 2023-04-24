@@ -5,6 +5,14 @@
 
 ![go meetup profile](./asset/go%20meetup%20profile.jpg)
 
+## 打廣告  
+
+待業中, 正在尋求工作  
+有近三年的純軟工作經驗，主要擔任後端工程師  
+以下是我的履歷  
+
+<https://www.cakeresume.com/ch_caesar>  
+
 ## slide
 
 v2:  
