@@ -3,8 +3,6 @@
 實現一個 簡易的 cache proxy  
 藉由 concurrency 的情景, 提供數種程式的撰寫方式
 
-![go meetup profile](./asset/go%20meetup%20profile.jpg)
-
 ## 打廣告  
 
 待業中, 正在尋求工作  
@@ -25,6 +23,10 @@ v0:
 
 v0 相關程式  
 <https://github.com/KScaesar/cache-proxy-demo/tree/v0.1.0>
+
+## youtube 演講影片
+
+[![演講題目說明](./asset/議程.png)](https://youtu.be/gwZhQiHcJlQ?t=1898)
 
 ## cache proxy implimentation
 
