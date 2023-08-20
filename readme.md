@@ -9,7 +9,7 @@
 有近三年的純軟工作經驗，主要擔任後端工程師  
 以下是我的履歷  
 
-<https://www.cakeresume.com/ch_caesar>  
+[Resume](https://www.cakeresume.com/s---I2gzAabWYpPT5LQogCd3g--/ch_caesar)
 
 ## slide
 
